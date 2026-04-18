@@ -1,0 +1,16 @@
+[Unit]
+Description=Instagram to Telegram Relay Bot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/ig2tel
+EnvironmentFile=/opt/ig2tel/.env
+ExecStart=/opt/ig2tel/.venv/bin/python /opt/ig2tel/main.py
+Restart=always
+RestartSec=5
+User=ig2tel
+Group=ig2tel
+
+[Install]
+WantedBy=multi-user.target
