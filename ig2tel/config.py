@@ -30,6 +30,9 @@ class Settings:
     max_fetch_items: int = 8
     scheduler_jitter_seconds: int = 5
     telegram_api_base: str = "https://api.telegram.org"
+    apify_token: str | None = None
+    apify_actor_id: str = "instagram-scraper/instagram-profile-posts-scraper"
+    apify_timeout_seconds: int = 60
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -49,6 +52,13 @@ class Settings:
         max_fetch_items = int(os.getenv("MAX_FETCH_ITEMS", "8"))
         log_level = os.getenv("LOG_LEVEL", "INFO").upper().strip() or "INFO"
 
+        apify_token = os.getenv("APIFY_TOKEN", "").strip() or None
+        apify_actor_id = os.getenv(
+            "APIFY_ACTOR_ID",
+            "instagram-scraper/instagram-profile-posts-scraper",
+        ).strip()
+        apify_timeout_seconds = int(os.getenv("APIFY_TIMEOUT_SECONDS", "60"))
+
         return cls(
             telegram_bot_token=token,
             admin_user_ids=admin_user_ids,
@@ -57,4 +67,7 @@ class Settings:
             tmp_dir=tmp_dir,
             log_level=log_level,
             max_fetch_items=max_fetch_items,
+            apify_token=apify_token,
+            apify_actor_id=apify_actor_id,
+            apify_timeout_seconds=apify_timeout_seconds,
         )

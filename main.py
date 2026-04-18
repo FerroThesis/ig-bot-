@@ -12,6 +12,8 @@ from ig2tel.core.link_service import LinkService
 from ig2tel.core.scheduler import PollScheduler
 from ig2tel.db.repository import Repository
 from ig2tel.logging_utils import configure_logging
+from ig2tel.providers.instagram.apify_provider import ApifyInstagramPostsProvider
+from ig2tel.providers.instagram.fallback_provider import FallbackInstagramPostsProvider
 from ig2tel.providers.instagram.instaloader_provider import InstaloaderProvider
 from ig2tel.providers.instagram.story_best_effort_provider import StoryBestEffortProvider
 
@@ -34,8 +36,24 @@ def main() -> None:
     repository.init_schema()
     repository.seed_admins(settings.admin_user_ids)
 
-    post_provider = InstaloaderProvider()
-    story_provider = StoryBestEffortProvider(post_provider)
+    instaloader_provider = InstaloaderProvider()
+
+    post_provider = instaloader_provider
+    if settings.apify_token:
+        apify_provider = ApifyInstagramPostsProvider(
+            token=settings.apify_token,
+            actor_id=settings.apify_actor_id,
+            timeout_seconds=settings.apify_timeout_seconds,
+        )
+        post_provider = FallbackInstagramPostsProvider([
+            instaloader_provider,
+            apify_provider,
+        ])
+        log.info("Instagram provider mode: instaloader + apify fallback")
+    else:
+        log.info("Instagram provider mode: instaloader only")
+
+    story_provider = StoryBestEffortProvider(instaloader_provider)
 
     telegram = TelegramApiClient(
         token=settings.telegram_bot_token,

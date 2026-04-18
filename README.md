@@ -18,12 +18,14 @@ Single-process Python service that relays new posts/reels from public Instagram 
 - Dedupe across restarts
 - Retry/cooldown on Instagram fetch failures
 - Best-effort story forwarding when `--stories` is enabled
+- Optional third-party fallback via Apify when the VPS IP is rate-limited by Instagram
 
 ## Important notes
 
 - Only public Instagram accounts are supported.
 - Stories without login are unstable by nature and may fail.
 - Instagram can change anti-bot behavior at any time; this design includes retries but cannot guarantee zero interruptions.
+- For fallback scraping via Apify you need your own API token and actor configuration.
 
 ## Quick start
 
@@ -57,6 +59,11 @@ python main.py
 - `MAX_FETCH_ITEMS` (default: `8`)
 - `TMP_DIR` (default: `./tmp`)
 - `LOG_LEVEL` (default: `INFO`)
+
+Optional fallback:
+- `APIFY_TOKEN` (empty means disabled)
+- `APIFY_ACTOR_ID` (default: `instagram-scraper/instagram-profile-posts-scraper`)
+- `APIFY_TIMEOUT_SECONDS` (default: `60`)
 
 ## VPS (systemd)
 
