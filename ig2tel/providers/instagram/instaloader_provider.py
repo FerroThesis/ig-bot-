@@ -17,6 +17,8 @@ class InstaloaderProvider:
             ) from exc
 
         self._instaloader_module = instaloader
+        # Important: disable Instaloader's long internal waiting on 429.
+        # The scheduler/repository retry logic handles backoff instead.
         self._loader = instaloader.Instaloader(
             download_pictures=False,
             download_videos=False,
@@ -24,6 +26,9 @@ class InstaloaderProvider:
             save_metadata=False,
             compress_json=False,
             quiet=True,
+            sleep=False,
+            max_connection_attempts=1,
+            request_timeout=20,
         )
 
     def fetch_recent_posts(self, username: str, limit: int = 20) -> list[IGPost]:
@@ -36,7 +41,7 @@ class InstaloaderProvider:
                     break
                 posts.append(self._map_post(username, post))
         except Exception as exc:  # noqa: BLE001
-            raise ProviderError(f"Failed to fetch posts for @{username}: {exc}") from exc
+            raise ProviderError(self._normalize_provider_error(f"Failed to fetch posts for @{username}", exc)) from exc
 
         return posts
 
@@ -65,13 +70,15 @@ class InstaloaderProvider:
                     )
             return StoryFetchResult(items=stories)
         except Exception as exc:  # noqa: BLE001
-            return StoryFetchResult(items=[], unavailable_reason=str(exc))
+            return StoryFetchResult(items=[], unavailable_reason=self._normalize_provider_error("Stories unavailable", exc))
 
     def _get_profile(self, username: str) -> Any:
         try:
             return self._instaloader_module.Profile.from_username(self._loader.context, username)
         except Exception as exc:  # noqa: BLE001
-            raise ProviderError(f"Failed to resolve Instagram profile @{username}: {exc}") from exc
+            raise ProviderError(
+                self._normalize_provider_error(f"Failed to resolve Instagram profile @{username}", exc)
+            ) from exc
 
     def _map_post(self, username: str, post: Any) -> IGPost:
         media = self._post_media(post)
@@ -138,3 +145,10 @@ class InstaloaderProvider:
         if value.tzinfo is None:
             return value.replace(tzinfo=UTC)
         return value.astimezone(UTC)
+
+    @staticmethod
+    def _normalize_provider_error(prefix: str, exc: Exception) -> str:
+        text = str(exc)
+        if "429" in text or "Too Many Requests" in text:
+            return f"{prefix}: Instagram rate-limited this VPS IP (429)"
+        return f"{prefix}: {text}"

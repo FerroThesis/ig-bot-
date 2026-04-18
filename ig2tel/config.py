@@ -11,7 +11,10 @@ def _parse_admin_ids(raw: str) -> set[int]:
         token = token.strip()
         if not token:
             continue
-        values.add(int(token))
+        normalized = token
+        if normalized.lower().startswith("id:"):
+            normalized = normalized.split(":", 1)[1].strip()
+        values.add(int(normalized))
     return values
 
 
@@ -24,10 +27,9 @@ class Settings:
     tmp_dir: Path = Path("tmp")
     log_level: str = "INFO"
     request_timeout_seconds: int = 30
-    max_fetch_items: int = 20
+    max_fetch_items: int = 8
     scheduler_jitter_seconds: int = 5
     telegram_api_base: str = "https://api.telegram.org"
-
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -44,6 +46,7 @@ class Settings:
         tmp_dir = Path(os.getenv("TMP_DIR", "tmp")).expanduser().resolve()
 
         poll_interval_seconds = int(os.getenv("POLL_INTERVAL_SECONDS", "180"))
+        max_fetch_items = int(os.getenv("MAX_FETCH_ITEMS", "8"))
         log_level = os.getenv("LOG_LEVEL", "INFO").upper().strip() or "INFO"
 
         return cls(
@@ -53,4 +56,5 @@ class Settings:
             poll_interval_seconds=poll_interval_seconds,
             tmp_dir=tmp_dir,
             log_level=log_level,
+            max_fetch_items=max_fetch_items,
         )

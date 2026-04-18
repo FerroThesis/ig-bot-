@@ -54,6 +54,7 @@ python main.py
 - `ADMIN_USER_IDS` (required, comma-separated Telegram user IDs)
 - `DB_PATH` (default: `./ig2tel.db`)
 - `POLL_INTERVAL_SECONDS` (default: `180`)
+- `MAX_FETCH_ITEMS` (default: `8`)
 - `TMP_DIR` (default: `./tmp`)
 - `LOG_LEVEL` (default: `INFO`)
 
