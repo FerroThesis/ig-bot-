@@ -30,6 +30,11 @@ class Settings:
     max_fetch_items: int = 8
     scheduler_jitter_seconds: int = 5
     telegram_api_base: str = "https://api.telegram.org"
+
+    gallery_dl_enabled: bool = True
+    gallery_dl_path: str = "gallery-dl"
+    gallery_dl_timeout_seconds: int = 40
+
     apify_token: str | None = None
     apify_actor_id: str = "instagram-scraper/instagram-profile-posts-scraper"
     apify_timeout_seconds: int = 60
@@ -52,6 +57,15 @@ class Settings:
         max_fetch_items = int(os.getenv("MAX_FETCH_ITEMS", "8"))
         log_level = os.getenv("LOG_LEVEL", "INFO").upper().strip() or "INFO"
 
+        gallery_dl_enabled = os.getenv("GALLERY_DL_ENABLED", "true").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+        gallery_dl_path = os.getenv("GALLERY_DL_PATH", "gallery-dl").strip() or "gallery-dl"
+        gallery_dl_timeout_seconds = int(os.getenv("GALLERY_DL_TIMEOUT_SECONDS", "40"))
+
         apify_token = os.getenv("APIFY_TOKEN", "").strip() or None
         apify_actor_id = os.getenv(
             "APIFY_ACTOR_ID",
@@ -67,6 +81,9 @@ class Settings:
             tmp_dir=tmp_dir,
             log_level=log_level,
             max_fetch_items=max_fetch_items,
+            gallery_dl_enabled=gallery_dl_enabled,
+            gallery_dl_path=gallery_dl_path,
+            gallery_dl_timeout_seconds=gallery_dl_timeout_seconds,
             apify_token=apify_token,
             apify_actor_id=apify_actor_id,
             apify_timeout_seconds=apify_timeout_seconds,

@@ -18,14 +18,16 @@ Single-process Python service that relays new posts/reels from public Instagram 
 - Dedupe across restarts
 - Retry/cooldown on Instagram fetch failures
 - Best-effort story forwarding when `--stories` is enabled
-- Optional third-party fallback via Apify when the VPS IP is rate-limited by Instagram
+- Provider chain support:
+  - Instaloader (default)
+  - Optional free fallback: gallery-dl command
+  - Optional paid fallback: Apify API
 
 ## Important notes
 
 - Only public Instagram accounts are supported.
 - Stories without login are unstable by nature and may fail.
 - Instagram can change anti-bot behavior at any time; this design includes retries but cannot guarantee zero interruptions.
-- For fallback scraping via Apify you need your own API token and actor configuration.
 
 ## Quick start
 
@@ -37,14 +39,23 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-2. Configure environment:
+2. (Optional) install gallery-dl for free fallback:
+
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install -y gallery-dl
+# or via pip
+pip install gallery-dl
+```
+
+3. Configure environment:
 
 ```bash
 cp .env.example .env
 # edit .env
 ```
 
-3. Run:
+4. Run:
 
 ```bash
 python main.py
@@ -60,7 +71,12 @@ python main.py
 - `TMP_DIR` (default: `./tmp`)
 - `LOG_LEVEL` (default: `INFO`)
 
-Optional fallback:
+Free fallback:
+- `GALLERY_DL_ENABLED` (default: `true`)
+- `GALLERY_DL_PATH` (default: `gallery-dl`)
+- `GALLERY_DL_TIMEOUT_SECONDS` (default: `40`)
+
+Paid fallback (optional):
 - `APIFY_TOKEN` (empty means disabled)
 - `APIFY_ACTOR_ID` (default: `instagram-scraper/instagram-profile-posts-scraper`)
 - `APIFY_TIMEOUT_SECONDS` (default: `60`)

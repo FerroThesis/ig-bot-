@@ -13,7 +13,9 @@ from ig2tel.core.scheduler import PollScheduler
 from ig2tel.db.repository import Repository
 from ig2tel.logging_utils import configure_logging
 from ig2tel.providers.instagram.apify_provider import ApifyInstagramPostsProvider
+from ig2tel.providers.instagram.base import ProviderUnavailableError
 from ig2tel.providers.instagram.fallback_provider import FallbackInstagramPostsProvider
+from ig2tel.providers.instagram.gallerydl_provider import GalleryDlInstagramProvider
 from ig2tel.providers.instagram.instaloader_provider import InstaloaderProvider
 from ig2tel.providers.instagram.story_best_effort_provider import StoryBestEffortProvider
 
@@ -38,20 +40,32 @@ def main() -> None:
 
     instaloader_provider = InstaloaderProvider()
 
-    post_provider = instaloader_provider
+    post_providers: list[object] = [instaloader_provider]
+
+    if settings.gallery_dl_enabled:
+        try:
+            gallery_provider = GalleryDlInstagramProvider(
+                command=settings.gallery_dl_path,
+                timeout_seconds=settings.gallery_dl_timeout_seconds,
+            )
+            post_providers.append(gallery_provider)
+        except ProviderUnavailableError as exc:
+            log.warning("gallery-dl fallback disabled: %s", exc)
+
     if settings.apify_token:
         apify_provider = ApifyInstagramPostsProvider(
             token=settings.apify_token,
             actor_id=settings.apify_actor_id,
             timeout_seconds=settings.apify_timeout_seconds,
         )
-        post_provider = FallbackInstagramPostsProvider([
-            instaloader_provider,
-            apify_provider,
-        ])
-        log.info("Instagram provider mode: instaloader + apify fallback")
+        post_providers.append(apify_provider)
+
+    if len(post_providers) == 1:
+        post_provider = post_providers[0]
     else:
-        log.info("Instagram provider mode: instaloader only")
+        fallback_chain = FallbackInstagramPostsProvider(post_providers)
+        post_provider = fallback_chain
+        log.info("Instagram provider chain: %s", " -> ".join(fallback_chain.provider_names()))
 
     story_provider = StoryBestEffortProvider(instaloader_provider)
 

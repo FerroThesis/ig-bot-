@@ -29,3 +29,6 @@ class FallbackInstagramPostsProvider:
                 errors.append(f"{provider.__class__.__name__}: {exc}")
 
         raise ProviderError("All Instagram providers failed: " + " | ".join(errors))
+
+    def provider_names(self) -> list[str]:
+        return [provider.__class__.__name__ for provider in self._providers]
